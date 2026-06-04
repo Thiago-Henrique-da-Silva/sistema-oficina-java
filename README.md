@@ -2,15 +2,18 @@
 
 Projeto desenvolvido em Java utilizando:
 - Programação Orientada a Objetos (POO)
-- Collections (`List` e `Map`)
+- Collections (List)
 - Exceptions personalizadas
 - Enum
+- JDBC com MySQL
 - Estrutura em camadas
 
 ## 📌 Estrutura do Projeto
-- `dominio` — entidades do sistema (Cliente, Carro, OrdemDeServico)
+- `domain` — entidades do sistema (Cliente, Carro, OrdemServico)
+- `repository` — acesso ao banco de dados (DAO)
 - `service` — regras de negócio
 - `exception` — exceções personalizadas
+- `sql` — script de criação do banco
 
 ## 📌 Funcionalidades
 - Cadastro de clientes
@@ -27,11 +30,16 @@ Projeto desenvolvido em Java utilizando:
 - `FINALIZADO`
 
 ## 📌 Como rodar
-- Java 17 ou superior
-- Clone o repositório e execute a classe `Main`
+
+### Pré-requisitos
+- Java 17+
+- MySQL rodando (local ou Docker)
+
+### Banco de dados
+1. Execute o script `sql/banco.sql` no seu MySQL para criar o banco e as tabelas
+2. Configure as credenciais de conexão em `src/connection/Conexao.java`
 
 ## 🚀 Melhorias futuras
 - Spring Boot
-- Banco de dados
 - API REST
 - Interface gráfica

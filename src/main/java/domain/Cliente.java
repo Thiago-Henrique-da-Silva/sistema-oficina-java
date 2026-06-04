@@ -10,8 +10,6 @@ public class Cliente {
     private String cpf;
     private String telefone;
 
-    private Cliente() {};
-
     public Cliente(String nome, String cpf, String telefone) {
         if (nome == null || nome.isEmpty()) {
             throw new IllegalArgumentException("Nome não pode ser vazio.");
@@ -32,6 +30,11 @@ public class Cliente {
         this.cpf = cpf;
         this.telefone = telefone;
         this.id = contadorId++;
+    }
+
+    public Cliente(String nome, String cpf) {
+        this.nome = nome;
+        this.cpf = cpf;
     }
 
     //comparando pelo cpf pois id é gerado automaticamente.

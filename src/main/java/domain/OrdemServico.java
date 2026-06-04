@@ -20,6 +20,13 @@ public class OrdemServico {
         this.id = contadorId++;
     }
 
+    public OrdemServico(Long id, Cliente cliente, Carro carro, StatusOrdemServico statusOrdemServico) {
+        this.id = id;
+        this.cliente = cliente;
+        this.carro = carro;
+        this.statusOrdemServico = statusOrdemServico;
+    }
+
     public void MudarStatusOrdemServico(StatusOrdemServico statusOrdemServico) {
         this.statusOrdemServico = statusOrdemServico;
     }

@@ -29,6 +29,11 @@ public class Carro {
         this.id = ContadorId++;
     }
 
+    public Carro(String modelo, String placa) {
+        this.modelo = modelo;
+        this.placa = placa;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;

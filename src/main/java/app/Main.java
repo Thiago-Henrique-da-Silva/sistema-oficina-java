@@ -1,4 +1,4 @@
-package main;
+package app;
 
 import domain.Carro;
 import domain.Cliente;
@@ -11,20 +11,13 @@ import service.OficinaService;
 
 import java.util.Scanner;
 
-import java.util.Scanner;
-
-import java.util.Scanner;
-
 public class Main {
 
     public static void main(String[] args) {
-
         Scanner sc = new Scanner(System.in);
-
         ClienteService clienteService = new ClienteService();
         CarroService carroService = new CarroService();
         OficinaService oficinaService = new OficinaService();
-
         int opcao = -1;
 
         while (opcao != 0) {
