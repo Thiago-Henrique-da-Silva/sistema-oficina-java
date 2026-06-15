@@ -16,8 +16,7 @@ public class Conexao {
             System.out.println("conexão realizada com sucesso!");
             return conn;
         } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException(e);
         }
     }
 }

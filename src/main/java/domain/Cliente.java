@@ -3,8 +3,6 @@ package domain;
 import java.util.Objects;
 
 public class Cliente {
-    private static Long contadorId = 0L;
-
     private Long id;
     private String nome;
     private String cpf;
@@ -29,7 +27,6 @@ public class Cliente {
         this.nome = nome;
         this.cpf = cpf;
         this.telefone = telefone;
-        this.id = contadorId++;
     }
 
     public Cliente(String nome, String cpf) {
@@ -58,14 +55,6 @@ public class Cliente {
                 ", cpf='" + cpf + '\'' +
                 ", telefone='" + telefone + '\'' +
                 '}';
-    }
-
-    public static Long getContadorId() {
-        return contadorId;
-    }
-
-    public static void setContadorId(Long contadorId) {
-        Cliente.contadorId = contadorId;
     }
 
     public Long getId() {

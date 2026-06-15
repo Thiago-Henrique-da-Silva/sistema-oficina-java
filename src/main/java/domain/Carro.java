@@ -3,8 +3,6 @@ package domain;
 import java.util.Objects;
 
 public class Carro {
-    private static Long ContadorId = 0L;
-
     private Long id;
     private String marca;
     private String modelo;
@@ -26,7 +24,6 @@ public class Carro {
         this.marca = marca;
         this.modelo = modelo;
         this.placa = placa;
-        this.id = ContadorId++;
     }
 
     public Carro(String modelo, String placa) {
@@ -54,14 +51,6 @@ public class Carro {
                 ", modelo='" + modelo + '\'' +
                 ", placa='" + placa + '\'' +
                 '}';
-    }
-
-    public static Long getContadorId() {
-        return ContadorId;
-    }
-
-    public static void setContadorId(Long contadorId) {
-        ContadorId = contadorId;
     }
 
     public Long getId() {
