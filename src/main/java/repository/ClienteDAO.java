@@ -3,25 +3,28 @@ package repository;
 import connection.Conexao;
 import domain.Cliente;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ClienteDAO {
 
     public void cadastrarCliente (Cliente cliente) {
-        String sql = "INSERT INTO clientes (nome, cpf, telefone) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO Clientes (nome, cpf, telefone) VALUES (?, ?, ?)";
 
         try (Connection conn = Conexao.getConexao();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setString(1, cliente.getNome());
             stmt.setString(2, cliente.getCpf());
             stmt.setString(3, cliente.getTelefone());
             stmt.executeUpdate();
+
+            try (ResultSet rs = stmt.getGeneratedKeys()) {
+                if(rs.next()) {
+                    cliente.setId(rs.getLong("id"));
+                }
+            }
 
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -29,7 +32,7 @@ public class ClienteDAO {
     }
 
     public void removerCliente (String cpf) {
-        String sql = "DELETE FROM clientes WHERE cpf = ?";
+        String sql = "DELETE FROM Clientes WHERE cpf = ?";
 
         try (Connection conn = Conexao.getConexao();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -43,7 +46,7 @@ public class ClienteDAO {
     }
 
     public Cliente buscarClientePorCpf(String cpf) {
-        String sql = "SELECT * FROM clientes WHERE cpf = ?";
+        String sql = "SELECT * FROM Clientes WHERE cpf = ?";
 
         try (Connection conn = Conexao.getConexao();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -55,7 +58,8 @@ public class ClienteDAO {
                     return new Cliente(
                             rs.getString("nome"),
                             rs.getString("cpf"),
-                            rs.getString("telefone"));
+                            rs.getString("telefone")
+                    );
                 }
             }
 
@@ -67,7 +71,7 @@ public class ClienteDAO {
     }
 
     public List<Cliente> listarClientes() {
-        String sql = "SELECT nome, cpf, telefone FROM clientes ORDER BY nome ASC";
+        String sql = "SELECT nome, cpf, telefone FROM Clientes ORDER BY nome ASC";
         List<Cliente> clientes = new ArrayList<>();
 
         try (Connection conn = Conexao.getConexao();
@@ -81,15 +85,15 @@ public class ClienteDAO {
                 clientes.add(cliente);
             }
 
+            return clientes;
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
-        return clientes;
     }
 
     public boolean existeCPF(String cpf) {
-        String sql = "SELECT 1 FROM Clientes WHERE cpf = ?";
+        String sql = "SELECT FROM Clientes WHERE cpf = ?";
 
         try (Connection conn = Conexao.getConexao();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
