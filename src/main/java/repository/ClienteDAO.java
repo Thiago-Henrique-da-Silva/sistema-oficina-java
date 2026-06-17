@@ -93,7 +93,7 @@ public class ClienteDAO {
     }
 
     public boolean existeCPF(String cpf) {
-        String sql = "SELECT FROM Clientes WHERE cpf = ?";
+        String sql = "SELECT * FROM Clientes WHERE cpf = ?";
 
         try (Connection conn = Conexao.getConexao();
              PreparedStatement stmt = conn.prepareStatement(sql)) {

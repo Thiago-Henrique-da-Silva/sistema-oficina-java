@@ -32,7 +32,7 @@ public class CarroDAO {
     }
 
     public void removerCarro (String placa) {
-        String sql = "DELETE FROM carro WHERE placa = ?";
+        String sql = "DELETE FROM Carros WHERE placa = ?";
 
         try (Connection conn = Conexao.getConexao();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
