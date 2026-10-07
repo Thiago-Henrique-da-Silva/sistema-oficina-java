@@ -9,20 +9,20 @@ Projeto desenvolvido em Java utilizando:
 - Estrutura em camadas
 
 ## 📌 Estrutura do Projeto
-- `domain` — entidades do sistema (Cliente, Carro, OrdemServico)
-- `repository` — acesso ao banco de dados (DAO)
-- `service` — regras de negócio
+- `OficinaMecanica.controller.entity` — entidades do sistema (Cliente, Carro, OrdemServico)
+- `OficinaMecanica.controller.repository` — acesso ao banco de dados (DAO)
+- `OficinaMecanica.controller.service` — regras de negócio
 - `exception` — exceções personalizadas
 - `sql` — script de criação do banco
 
 ## 📌 Funcionalidades
-- Cadastro de clientes
-- Cadastro de carros
+- Cadastro de clients
+- Cadastro de car
 - Criação de ordens de serviço
 - Atualização de status da ordem
 - Listagem de ordens de serviço
-- Busca de cliente por CPF
-- Busca de carro por placa
+- Busca de client por CPF
+- Busca de car por placa
 
 ## 📌 Status da Ordem
 - `INICIADO`
