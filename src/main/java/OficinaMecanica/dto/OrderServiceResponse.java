@@ -19,6 +19,7 @@ public class OrderServiceResponse {
     private CarResponse car;
     private LocalDate startedService;
     private LocalDate completedService;
+    private LocalDate cancelledService;
     private BigDecimal price;
     private ServiceOrderStatus serviceOrderStatus;
 }

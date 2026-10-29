@@ -6,11 +6,14 @@ import OficinaMecanica.dto.OrderServiceResponse;
 import OficinaMecanica.entity.Car;
 import OficinaMecanica.entity.OrderService;
 import OficinaMecanica.entity.ServiceOrderStatus;
+import OficinaMecanica.exception.BusinessException;
+import OficinaMecanica.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import OficinaMecanica.mapper.OrderServiceMapper;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 import OficinaMecanica.repository.OrderServiceRepository;
 
 import java.math.BigDecimal;
@@ -19,138 +22,105 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ServiceOrderService {
     private final OrderServiceRepository orderServiceRepository;
     private final OrderServiceMapper orderServiceMapper;
     private final CarService carService;
 
+    @Transactional
     public OrderServiceResponse createOrderService(OrderServiceRequest orderServiceRequest){
-        if (orderServiceRequest.getDescription() == null || orderServiceRequest.getCarId() == null ||
-        orderServiceRequest.getDescription().isBlank()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Todos os campos devem ser preenchidos");
-        }
-
         Car car = carService.findCarByIdEntity(orderServiceRequest.getCarId());
         OrderService orderService = new OrderService(orderServiceRequest.getDescription(), car);
         OrderService savedOrderService = orderServiceRepository.save(orderService);
         return orderServiceMapper.toOrderServiceResponse(savedOrderService);
     }
 
-    public OrderServiceResponse startedOrderService(Long id, LocalDate startedService){
-        if (startedService == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "data de inicio não preencida.");
-        }
-
+    @Transactional
+    public OrderServiceResponse startedOrderService(Long id){
         OrderService orderService = findOrderServiceByIdEntity(id);
 
         switch (orderService.getServiceOrderStatus()) {
-            case INITIATED -> throw new ResponseStatusException(HttpStatus.CONFLICT, "Este serviço ja foi iniciado.");
-            case CANCELED -> throw new ResponseStatusException(HttpStatus.CONFLICT, "Este serviço foi cancelado.");
-            case COMPLETED -> throw new ResponseStatusException(HttpStatus.CONFLICT, "Este serviço já está completo.");
+            case INITIATED -> throw new BusinessException("Este serviço já foi iniciado.");
+            case CANCELED -> throw new BusinessException("Este serviço foi cancelado.");
+            case COMPLETED -> throw new BusinessException("Este serviço já está completo.");
         }
 
-        orderService.setStartedService(startedService);
+        orderService.setStartedService(LocalDate.now());
         orderService.setServiceOrderStatus(ServiceOrderStatus.INITIATED);
         OrderService savedOrderService = orderServiceRepository.save(orderService);
         return orderServiceMapper.toOrderServiceResponse(savedOrderService);
     }
 
-    public OrderServiceResponse completedOrderService(Long id, LocalDate completedService){
+    @Transactional
+    public OrderServiceResponse completedOrderService(Long id){
 
         OrderService orderService = findOrderServiceByIdEntity(id);
 
         switch (orderService.getServiceOrderStatus()) {
-            case CANCELED -> throw new ResponseStatusException(HttpStatus.CONFLICT, "Este serviço foi cancelado.");
-            case COMPLETED -> throw new ResponseStatusException(HttpStatus.CONFLICT, "Este serviço já está completo.");
-            case WAITING -> throw new ResponseStatusException(HttpStatus.CONFLICT, "Este serviço ainda não foi iniciado;");
-        }
-
-        if (completedService == null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Data de término não preencida.");
+            case CANCELED -> throw new BusinessException("Este serviço foi cancelado.");
+            case COMPLETED -> throw new BusinessException("Este serviço já está completo.");
+            case WAITING -> throw new BusinessException("Este serviço ainda não foi iniciado.");
         }
 
         if (orderService.getStartedService() == null) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "data inicial não definida");
+            throw new BusinessException("Data de início do serviço não definida.");
         }
 
-        if (completedService.isBefore(orderService.getStartedService())){
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Data de finalização deve ser após a data de inicio.");
-        }
-
-        orderService.setCompletedService(completedService);
+        orderService.setCompletedService(LocalDate.now());
         orderService.setServiceOrderStatus(ServiceOrderStatus.COMPLETED);
         OrderService savedOrderService = orderServiceRepository.save(orderService);
         return orderServiceMapper.toOrderServiceResponse(savedOrderService);
     }
 
+    @Transactional
     public OrderServiceResponse cancelledOrderService(Long id){
         OrderService orderService = findOrderServiceByIdEntity(id);
 
-        if (orderService.getServiceOrderStatus() == ServiceOrderStatus.CANCELED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este serviço já foi cancelado.");
+        switch (orderService.getServiceOrderStatus()) {
+            case CANCELED -> throw new BusinessException("Este serviço já foi cancelado.");
+            case COMPLETED -> throw new BusinessException("Serviços concluídos não podem ser cancelados.");
         }
 
-        if (orderService.getServiceOrderStatus() == ServiceOrderStatus.COMPLETED) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Serviços completos não podem ser finalizados.");
-        }
-
-        if (orderService.getStartedService() == null) {
-            orderService.setStartedService(LocalDate.now());
-        }
-
-        if (orderService.getCompletedService() == null) {
-            orderService.setCompletedService(LocalDate.now());
-        }
-
-        if (orderService.getPrice() == null) {
-            orderService.setPrice(BigDecimal.ZERO);
-        }
-
+        orderService.setCancelledService(LocalDate.now());
         orderService.setServiceOrderStatus(ServiceOrderStatus.CANCELED);
         OrderService savedOrderService = orderServiceRepository.save(orderService);
         return orderServiceMapper.toOrderServiceResponse(savedOrderService);
     }
 
+    @Transactional
     public OrderServiceResponse addPrice(Long id, BigDecimal price){
         OrderService orderService = findOrderServiceByIdEntity(id);
-
-        if (price == null || price.compareTo(BigDecimal.ZERO) < 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Valor inválido.");
-        }
-
         orderService.setPrice(price);
         OrderService savedOrderService = orderServiceRepository.save(orderService);
         return orderServiceMapper.toOrderServiceResponse(savedOrderService);
     }
 
+    @Transactional
     public OrderServiceResponse updateOrderService(Long id, OrderServicePut orderServicePut){
-        Car car = carService.findCarByIdEntity(orderServicePut.getCarId());
         OrderService orderService = findOrderServiceByIdEntity(id);
         orderServiceMapper.updateOrderService(orderServicePut, orderService);
-        orderService.setCar(car);
+
+        if (orderServicePut.getCarId() != null) {
+            Car car = carService.findCarByIdEntity(orderServicePut.getCarId());
+            orderService.setCar(car);
+        }
+
         OrderService savedOrderService = orderServiceRepository.save(orderService);
         return orderServiceMapper.toOrderServiceResponse(savedOrderService);
     }
 
-    public List<OrderServiceResponse> findAllOrdersService(){
-        List<OrderService> orderServiceList = orderServiceRepository.findAll();
-        return orderServiceMapper.toOrderServiceResponseList(orderServiceList);
+    public Page<OrderServiceResponse> findAllOrdersService(Pageable pageable){
+        return orderServiceRepository.findAll(pageable).map(orderServiceMapper::toOrderServiceResponse);
     }
 
-    public List<OrderServiceResponse> findAllOrdersCar(Long idCar){
-        Car car =  carService.findCarByIdEntity(idCar);
-        List<OrderService> ordersCar = car.getOrders();
-
-        if (ordersCar.isEmpty()){
-            throw  new ResponseStatusException(HttpStatus.NOT_FOUND, "Lista de serviço vazia.");
-        }
-
-        return orderServiceMapper.toOrderServiceResponseList(ordersCar);
+    public Page<OrderServiceResponse> findAllOrdersCar(Long idCar, Pageable pageable){
+        return orderServiceRepository.findAllByCarId(idCar, pageable).map(orderServiceMapper::toOrderServiceResponse);
     }
 
     public OrderService findOrderServiceByIdEntity(Long id){
         return orderServiceRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "serviço não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Ordem de serviço com id " + id + " não encontrada."));
     }
 
     public OrderServiceResponse findOrderServiceById(Long id){

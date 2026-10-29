@@ -1,14 +1,16 @@
 package OficinaMecanica.controller;
 
+import OficinaMecanica.dto.CarPut;
 import OficinaMecanica.dto.CarRequest;
 import OficinaMecanica.dto.CarResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import OficinaMecanica.service.CarService;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/cars")
@@ -17,13 +19,13 @@ public class CarController {
     private final CarService carService;
 
     @PostMapping
-    public ResponseEntity<CarResponse> addCar(@RequestBody CarRequest carRequest){
+    public ResponseEntity<CarResponse> addCar(@RequestBody @Valid CarRequest carRequest){
         return new ResponseEntity<>(carService.addCar(carRequest), HttpStatus.CREATED);
     }
 
     @GetMapping
-    public ResponseEntity<List<CarResponse>> getAllCars(){
-        return ResponseEntity.ok(carService.findAllCars());
+    public ResponseEntity<Page<CarResponse>> getAllCars(Pageable pageable){
+        return ResponseEntity.ok(carService.findAllCars(pageable));
     }
 
     @GetMapping("/{id}")
@@ -32,12 +34,12 @@ public class CarController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CarResponse> updateCar(@PathVariable Long id, @RequestBody CarRequest carRequest){
-        return ResponseEntity.ok(carService.updateCar(id, carRequest));
+    public ResponseEntity<CarResponse> updateCar(@PathVariable Long id, @RequestBody @Valid CarPut carPut){
+        return ResponseEntity.ok(carService.updateCar(id, carPut));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<CarResponse> deleteCar(@PathVariable Long id){
+    public ResponseEntity<Void> deleteCar(@PathVariable Long id){
         carService.deleteCarById(id);
         return ResponseEntity.noContent().build();
     }

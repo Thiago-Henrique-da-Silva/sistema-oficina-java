@@ -1,34 +1,40 @@
 package OficinaMecanica.service;
 
+import OficinaMecanica.dto.ClientPut;
 import OficinaMecanica.dto.ClientRequest;
 import OficinaMecanica.dto.ClientResponse;
 import OficinaMecanica.entity.Car;
 import OficinaMecanica.entity.Client;
+import OficinaMecanica.exception.ObjectHasAssociatedAttributesException;
+import OficinaMecanica.exception.DataAlreadyRegisteredException;
+import OficinaMecanica.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import OficinaMecanica.mapper.ClientMapper;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import OficinaMecanica.repository.CarRepository;
 import OficinaMecanica.repository.ClientRepository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ClientService {
     private final ClientRepository clientRepository;
     private final ClientMapper clientMapper;
     private final CarRepository carRepository;
 
+    @Transactional
     public ClientResponse addClient(ClientRequest clientRequest){
-        if (clientRequest.getName() == null || clientRequest.getCpf() == null || clientRequest.getTelephone() == null ||
-                clientRequest.getName().isBlank() || clientRequest.getCpf().isBlank() || clientRequest.getTelephone().isBlank()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "preencha todos os campos.");
+        if (clientRepository.existsByCpf(clientRequest.getCpf())) {
+            throw new DataAlreadyRegisteredException("CPF já cadastrado.");
         }
 
-        if (clientRepository.existsByCpf(clientRequest.getCpf())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "CPF já cadastrado");
+        if (clientRepository.existsByTelephone(clientRequest.getTelephone())) {
+            throw new DataAlreadyRegisteredException("Telefone já cadastrado.");
         }
 
         Client client = clientMapper.toClient(clientRequest);
@@ -36,19 +42,13 @@ public class ClientService {
         return clientMapper.toClientResponse(savedClient);
     }
 
-    public List<ClientResponse> findAllClients(){
-        List<Client> clients = clientRepository.findAll();
-
-        if (clients.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum cliente encontrado.");
-        }
-
-        return clientMapper.listAllClients(clients);
+    public Page<ClientResponse> findAllClients(Pageable pageable){
+        return clientRepository.findAll(pageable).map(clientMapper::toClientResponse);
     }
 
     public Client findClientByIdEntity(Long id){
         return clientRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Nenhum cliente encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente com id " + id + " não encontrado."));
     }
 
     public ClientResponse findClientById(Long id){
@@ -56,25 +56,30 @@ public class ClientService {
         return clientMapper.toClientResponse(client);
     }
 
-    public ClientResponse updateClient(Long id, ClientRequest clientRequest){
-        if (clientRequest.getName() == null || clientRequest.getCpf() == null || clientRequest.getTelephone() == null ||
-                clientRequest.getName().isBlank() || clientRequest.getCpf().isBlank() ||
-                clientRequest.getTelephone().isBlank()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "preencha todos os campos.");
+    @Transactional
+    public ClientResponse updateClient(Long id, ClientPut clientPut){
+        Client client = findClientByIdEntity(id);
+
+        if (clientRepository.existsByCpfAndIdNot(clientPut.getCpf(), id)){
+            throw new DataAlreadyRegisteredException("CPF já cadastrado.");
         }
 
-        Client client = findClientByIdEntity(id);
-        clientMapper.updateClient(clientRequest, client);
+        if (clientRepository.existsByTelephoneAndIdNot(clientPut.getTelephone(), id)){
+            throw new DataAlreadyRegisteredException("Telefone já cadastrado.");
+        }
+
+        clientMapper.updateClient(clientPut, client);
         Client savedClient = clientRepository.save(client);
         return clientMapper.toClientResponse(savedClient);
     }
 
+    @Transactional
     public void deleteClientById(Long id){
         Client client = findClientByIdEntity(id);
         List<Car> cars = carRepository.findByClientId(client.getId());
 
         if(!cars.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Remova os veiculos deste cliente para exclui-lo.");
+            throw new ObjectHasAssociatedAttributesException("Remova os veiculos deste cliente para exclui-lo.");
         }
 
         clientRepository.delete(client);

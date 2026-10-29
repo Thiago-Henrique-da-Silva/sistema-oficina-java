@@ -18,11 +18,14 @@ public class OrderService {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(nullable = false)
     private String description;
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private Car car;
     private LocalDate startedService;
     private LocalDate completedService;
+    private LocalDate cancelledService;
     private BigDecimal price;
     @Enumerated(EnumType.STRING)
     private ServiceOrderStatus serviceOrderStatus;

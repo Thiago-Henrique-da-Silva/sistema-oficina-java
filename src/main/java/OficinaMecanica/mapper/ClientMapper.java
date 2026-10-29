@@ -1,5 +1,6 @@
 package OficinaMecanica.mapper;
 
+import OficinaMecanica.dto.ClientPut;
 import OficinaMecanica.dto.ClientRequest;
 import OficinaMecanica.dto.ClientResponse;
 import OficinaMecanica.entity.Client;
@@ -7,8 +8,6 @@ import org.mapstruct.InheritConfiguration;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-
-import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ClientMapper {
@@ -18,11 +17,7 @@ public interface ClientMapper {
     Client toClient(ClientRequest clientRequest);
 
     @InheritConfiguration(name = "toClient")
-    void updateClient(ClientRequest clientRequest, @MappingTarget Client client);
+    void updateClient(ClientPut clientPut, @MappingTarget Client client);
 
     ClientResponse toClientResponse(Client client);
-
-    List<ClientResponse> listAllClients(List<Client> clients);
-
-
 }

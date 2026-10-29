@@ -79,6 +79,12 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Validation: necessário para @Valid, @NotEmpty, @NotNull... -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
     </dependencies>
 
 

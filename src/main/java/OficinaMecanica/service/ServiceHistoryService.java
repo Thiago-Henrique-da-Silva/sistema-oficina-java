@@ -2,11 +2,13 @@ package OficinaMecanica.service;
 
 import OficinaMecanica.dto.ServiceHistoryResponse;
 import OficinaMecanica.entity.*;
+import OficinaMecanica.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import OficinaMecanica.mapper.ServiceHistoryMapper;
-import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 import OficinaMecanica.repository.ServiceHistoryRepository;
 
 import java.math.BigDecimal;
@@ -15,12 +17,14 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class ServiceHistoryService {
     private final ClientService clientService;
     private final CarService carService;
     private final ServiceHistoryRepository serviceHistoryRepository;
     private final ServiceHistoryMapper serviceHistoryMapper;
 
+    @Transactional
     public ServiceHistoryResponse completeTheRepair(Long idCar) {
         Car car = carService.findCarByIdEntity(idCar);
         Client client  = clientService.findClientByIdEntity(car.getClient().getId());
@@ -35,7 +39,7 @@ public class ServiceHistoryService {
                 if (!order.isCalculated()){
 
                     if (order.getPrice() == null) {
-                        throw new ResponseStatusException(HttpStatus.CONFLICT, "defina os valores dos serviços.");
+                        throw new BusinessException("Defina o valor de todos os serviços antes de concluir o reparo.");
                     }
 
                     servicesCar.add(new  ListOfServiceHistory(order.getDescription(),  order.getPrice()));
@@ -44,12 +48,12 @@ public class ServiceHistoryService {
                 }
 
             } else {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "Ainda há serviços para serem finalizados.");
+                throw new BusinessException("Ainda há serviços para serem finalizados.");
             }
         }
 
         if (servicesCar.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Lista de serviços vazia");
+            throw new BusinessException("Não há serviços novos para registrar no histórico deste veículo.");
         }
 
         ServiceHistory serviceHistory = new ServiceHistory(
@@ -67,23 +71,14 @@ public class ServiceHistoryService {
         return serviceHistoryMapper.toServiceHistoryResponse(savedHistory);
     }
 
-    public List<ServiceHistoryResponse> findAllServiceHistoryByCpf(String cpf){
-        if (cpf == null || cpf.isBlank()){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "CPF digitado inválido.");
-        }
-
-        List<ServiceHistory> serviceHistory = serviceHistoryRepository.findByCpfClient(cpf);
-
-        if (serviceHistory.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Historico vazio.");
-        }
-
-        return serviceHistoryMapper.toServiceHistoryResponseList(serviceHistory);
+    public Page<ServiceHistoryResponse> findAllServiceHistoryByCpf(String cpf, Pageable pageable){
+        return serviceHistoryRepository.findByCpfClient(cpf, pageable)
+                .map(serviceHistoryMapper::toServiceHistoryResponse);
     }
 
-    public List<ServiceHistoryResponse> findAllServicesHistory(){
-        List<ServiceHistory> serviceHistories = serviceHistoryRepository.findAll();
-        return serviceHistoryMapper.toServiceHistoryResponseList(serviceHistories);
+    public Page<ServiceHistoryResponse> findAllServicesHistory(Pageable pageable){
+        return serviceHistoryRepository.findAll(pageable)
+                .map(serviceHistoryMapper::toServiceHistoryResponse);
     }
 
 
